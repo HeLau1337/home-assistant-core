@@ -383,3 +383,6 @@ def entities_for_device_and_its_children[_E: CoordinatedTPLinkEntity](
             )
 
     return entities
+    **kwargs: Any,
+            **kwargs,
+            **kwargs,
