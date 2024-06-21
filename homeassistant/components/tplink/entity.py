@@ -265,6 +265,7 @@ class CoordinatedTPLinkFeatureEntity(CoordinatedTPLinkEntity, ABC):
         descriptions: Mapping[str, _D],
         *,
         child_alias: str | None = None,
+        **kwargs: Any,
     ) -> _D:
         """Return description object for the given feature.
 
@@ -293,6 +294,7 @@ class CoordinatedTPLinkFeatureEntity(CoordinatedTPLinkEntity, ABC):
                 name=entity_name,  # if undefined will use translation key
                 entity_category=category,
                 entity_registry_enabled_default=enabled_default,
+                **kwargs,
             )
         else:
             desc = desc_cls(
@@ -301,6 +303,7 @@ class CoordinatedTPLinkFeatureEntity(CoordinatedTPLinkEntity, ABC):
                 icon=feature.icon,
                 entity_category=category,
                 entity_registry_enabled_default=enabled_default,
+                **kwargs,
             )
             _LOGGER.warning(
                 "Device feature: %s (%s) needs an entity description defined, "
@@ -383,6 +386,3 @@ def entities_for_device_and_its_children[_E: CoordinatedTPLinkEntity](
             )
 
     return entities
-    **kwargs: Any,
-            **kwargs,
-            **kwargs,
