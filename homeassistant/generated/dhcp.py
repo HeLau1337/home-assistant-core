@@ -121,6 +121,14 @@ DHCP: Final[list[dict[str, str | bool]]] = [
         "macaddress": "780F77*",
     },
     {
+        "domain": "delonghi_pac_n90_customized",
+        "hostname": "esp-ir-remote*",
+    },
+    {
+        "domain": "delonghi_pac_n90_customized",
+        "registered_devices": True,
+    },
+    {
         "domain": "dlink",
         "hostname": "dsp-w215",
     },

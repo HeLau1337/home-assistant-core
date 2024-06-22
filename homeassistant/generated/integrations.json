@@ -1138,6 +1138,12 @@
       "integration_type": "virtual",
       "supported_by": "opower"
     },
+    "delonghi_pac_n90_customized": {
+      "name": "DeLonghi PAC N90 Customized AC",
+      "integration_type": "device",
+      "config_flow": true,
+      "iot_class": "assumed_state"
+    },
     "deluge": {
       "name": "Deluge",
       "integration_type": "service",

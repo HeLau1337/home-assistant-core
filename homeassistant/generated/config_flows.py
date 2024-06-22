@@ -107,6 +107,7 @@ FLOWS = {
         "crownstone",
         "daikin",
         "deconz",
+        "delonghi_pac_n90_customized",
         "deluge",
         "denonavr",
         "devialet",
