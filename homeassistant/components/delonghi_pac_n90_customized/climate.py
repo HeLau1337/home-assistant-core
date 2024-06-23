@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import logging
 from pprint import pformat
 from typing import Any
@@ -156,12 +157,8 @@ class DeLonghiPACN90(ClimateEntity):
 
     async def async_turn_off(self) -> None:
         """Turn the entity off."""
-        self._last_state_before_turn_off = self
-        response = await self._api.async_set_state(
-            HVACMode.OFF,
-            self._fan_mode,
-            self._target_temperature,
-        )
+        self._last_state_before_turn_off = deepcopy(self)
+        response = await self._api.async_set_state(HVACMode.OFF)
         if response.status == 200:
             self._hvac_mode = HVACMode.OFF
         else:

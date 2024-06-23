@@ -27,7 +27,7 @@ class EspIrRemoteApiClient:
     async def async_set_state(
         self,
         hvac_mode: HVACMode,
-        fan_mode: str,
+        fan_mode: str | None = None,
         target_temperature: float | None = None,
     ) -> aiohttp.ClientResponse:
         """Send a GET request to the API endpoint for setting a new state of the AC unit."""
