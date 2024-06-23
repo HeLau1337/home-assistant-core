@@ -526,6 +526,14 @@ DHCP: Final[list[dict[str, str | bool]]] = [
         "macaddress": "64DBA0*",
     },
     {
+        "domain": "smartbed",
+        "hostname": "esp-smartbed-controller*",
+    },
+    {
+        "domain": "smartbed",
+        "registered_devices": True,
+    },
+    {
         "domain": "smartthings",
         "hostname": "st*",
         "macaddress": "24FD5B*",
