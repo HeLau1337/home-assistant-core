@@ -3,33 +3,45 @@
 from __future__ import annotations
 
 import logging
+from pprint import pformat
 from typing import Any
 
-from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
+import voluptuous as vol
+
+from homeassistant.components.climate import (
+    PLATFORM_SCHEMA,
+    ClimateEntity,
+    ClimateEntityFeature,
+)
 from homeassistant.const import ATTR_TEMPERATURE, CONF_NAME, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-from . import DeLonghiPACN90ConfigEntry
-from .const import CONF_BASE_URL, DOMAIN, FAN_HIGH, FAN_LOW, FAN_MEDIUM, HVACMode
-from .esp_ir_remote_api import EspIrRemoteApi
+from .const import (
+    CONF_API,
+    CONF_BASE_URL,
+    CONF_DEFAULT_BASE_URL,
+    CONF_DEFAULT_NAME,
+    DOMAIN,
+    FAN_HIGH,
+    FAN_LOW,
+    FAN_MEDIUM,
+    HVACMode,
+)
+from .esp_ir_remote_api_client import EspIrRemoteApiClient
 
 _LOGGER = logging.getLogger(__name__)
 
-
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: DeLonghiPACN90ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Set up AdvantageAir climate platform."""
-
-    instance = config_entry.runtime_data
-
-    entities: list[ClimateEntity] = []
-    entities.append(DeLonghiPACN90(instance.name, instance.base_url))
-    async_add_entities(entities)
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Optional(CONF_NAME, default=CONF_DEFAULT_NAME): cv.string,
+        vol.Required(CONF_BASE_URL, default=CONF_DEFAULT_BASE_URL): cv.string,
+    }
+)
 
 
 def setup_platform(
@@ -39,9 +51,16 @@ def setup_platform(
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
     """Set up the climate platform."""
-    name = hass.data[DOMAIN][CONF_NAME]
-    base_url = hass.data[DOMAIN][CONF_BASE_URL]
-    add_entities([DeLonghiPACN90(name, base_url)])
+    _LOGGER.info(pformat(config))
+
+    climate = {
+        CONF_NAME: config[CONF_NAME],
+        CONF_BASE_URL: config[CONF_BASE_URL],
+        CONF_API: EspIrRemoteApiClient(
+            config[CONF_BASE_URL], async_get_clientsession(hass)
+        ),
+    }
+    add_entities([DeLonghiPACN90(climate)])
 
 
 class DeLonghiPACN90(ClimateEntity):
@@ -63,14 +82,26 @@ class DeLonghiPACN90(ClimateEntity):
     )
     _enable_turn_on_off_backwards_compatibility = False
 
-    def __init__(self, name, base_url) -> None:
+    def __init__(self, climate) -> None:
         """Initialize the climate device."""
-        self._name = name
+        self._name = climate[CONF_NAME]
+        self._api: EspIrRemoteApiClient = climate[CONF_API]
         self._fan_mode = FAN_LOW
-        self._hvac_mode = HVACMode.FAN_ONLY
+        self._hvac_mode: HVACMode = HVACMode.OFF
         self._target_temperature = 24.0
-        self._api = EspIrRemoteApi(base_url)
         self._last_state_before_turn_off = self
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Information about this entity/device."""
+        return {
+            "identifiers": {(DOMAIN, self._roller.roller_id)},
+            # If desired, the name for the device could be different to the entity
+            "name": self._name,
+            "sw_version": "1.0",
+            "model": "PAC N90 ECO SILENT (custom)",
+            "manufacturer": "DeLonghi",
+        }
 
     @property
     def name(self) -> str:
@@ -107,14 +138,14 @@ class DeLonghiPACN90(ClimateEntity):
         """Return the maximum temperature."""
         return 32.0
 
-    def turn_on(self) -> None:
+    async def async_turn_on(self) -> None:
         """Turn the entity on."""
-        response = self._api.send_new_state_request(
+        response = await self._api.async_set_state(
             self._last_state_before_turn_off.hvac_mode,
             self._last_state_before_turn_off.fan_mode,
             self._last_state_before_turn_off.target_temperature,
         )
-        if response.ok:
+        if response.status == 200:
             self._hvac_mode = self._last_state_before_turn_off.hvac_mode
             self._fan_mode = self._last_state_before_turn_off.fan_mode
             self._target_temperature = (
@@ -123,26 +154,26 @@ class DeLonghiPACN90(ClimateEntity):
         else:
             _LOGGER.error("Failed to turn the device on!")
 
-    def turn_off(self) -> None:
+    async def async_turn_off(self) -> None:
         """Turn the entity off."""
         self._last_state_before_turn_off = self
-        response = self._api.send_new_state_request(
+        response = await self._api.async_set_state(
             HVACMode.OFF,
             self._fan_mode,
             self._target_temperature,
         )
-        if response.ok:
+        if response.status == 200:
             self._hvac_mode = HVACMode.OFF
         else:
             _LOGGER.error("Failed to turn the device off!")
 
-    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new operation mode."""
         _LOGGER.debug("set_hvac_mode: %s -> %s", self._hvac_mode, hvac_mode)
-        response = self._api.send_new_state_request(
+        response = await self._api.async_set_state(
             hvac_mode, self._fan_mode, self._target_temperature
         )
-        if response.ok:
+        if response.status == 200:
             self._hvac_mode = hvac_mode
         else:
             _LOGGER.error(
@@ -151,13 +182,13 @@ class DeLonghiPACN90(ClimateEntity):
                 hvac_mode,
             )
 
-    def set_fan_mode(self, fan_mode: str) -> None:
+    async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
         _LOGGER.debug("set_fan_mode: %s -> %s", self._fan_mode, fan_mode)
-        response = self._api.send_new_state_request(
+        response = await self._api.async_set_state(
             self._hvac_mode, fan_mode, self._target_temperature
         )
-        if response.ok:
+        if response.status == 200:
             self._fan_mode = fan_mode
         else:
             _LOGGER.error(
@@ -166,7 +197,7 @@ class DeLonghiPACN90(ClimateEntity):
                 fan_mode,
             )
 
-    def set_temperature(self, **kwargs: Any) -> None:
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         if (new_target_temperature := kwargs.get(ATTR_TEMPERATURE)) is None:
             return
@@ -175,10 +206,10 @@ class DeLonghiPACN90(ClimateEntity):
             self._target_temperature,
             new_target_temperature,
         )
-        response = self._api.send_new_state_request(
+        response = await self._api.async_set_state(
             self._hvac_mode, self._fan_mode, new_target_temperature
         )
-        if response.ok:
+        if response.status == 200:
             self._target_temperature = new_target_temperature
         else:
             _LOGGER.error(

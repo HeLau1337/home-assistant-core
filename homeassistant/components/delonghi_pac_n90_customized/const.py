@@ -16,6 +16,8 @@ FAN_LOW = "low"
 FAN_MEDIUM = "medium"
 FAN_HIGH = "high"
 
-CONF_BASE_URL = "Base URL"
+CONF_BASE_URL = "base_url"
+CONF_API = "api"
+
 CONF_DEFAULT_NAME = "DeLonghi PAC N90 ECO SILENT"
-CONF_DEFAULT_BASE_URL = "http://esp-ir-remote"
+CONF_DEFAULT_BASE_URL = "http://esp-ir-remote.local"

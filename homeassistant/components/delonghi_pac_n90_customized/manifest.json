@@ -2,8 +2,7 @@
   "domain": "delonghi_pac_n90_customized",
   "name": "DeLonghi PAC N90 Customized AC",
   "codeowners": ["@HeLau1337"],
-  "config_flow": true,
-  "dependencies": [],
+  "config_flow": false,
   "dhcp": [
     {
       "hostname": "esp-ir-remote*"
@@ -13,11 +12,6 @@
     }
   ],
   "documentation": "https://github.com/HeLau1337/ha-delonghi-pac-n90-component",
-  "homekit": {},
-  "integration_type": "device",
   "iot_class": "assumed_state",
-  "issue_tracker": "https://github.com/HeLau1337/ha-delonghi-pac-n90-component/issues",
-  "requirements": [],
-  "ssdp": [],
-  "zeroconf": []
+  "issue_tracker": "https://github.com/HeLau1337/ha-delonghi-pac-n90-component/issues"
 }

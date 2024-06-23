@@ -1140,8 +1140,8 @@
     },
     "delonghi_pac_n90_customized": {
       "name": "DeLonghi PAC N90 Customized AC",
-      "integration_type": "device",
-      "config_flow": true,
+      "integration_type": "hub",
+      "config_flow": false,
       "iot_class": "assumed_state"
     },
     "deluge": {
